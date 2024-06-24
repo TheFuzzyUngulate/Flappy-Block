@@ -31,7 +31,16 @@ const server = http.createServer((req, res) => {
     });
     var readStream = fs.createReadStream(filePath);
     readStream.pipe(res);
-  }
+  } else if (req.url == '/favicon.ico') {
+    var filePath = path.join(__dirname, 'favicon.ico');
+    var stat = fs.statSync(filePath);
+    res.writeHead(200, {
+      'Content-Type': 'image/x-icon',
+      'Content-Length': stat.size
+    });
+    var readStream = fs.createReadStream(filePath);
+    readStream.pipe(res);
+  } 
 });
 
 const PORT = 3000;

@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <head>
-    <title> Movement Test </title>
+    <title> Flappy Block? </title>
     <link href="/styles.css" type="text/css" rel="stylesheet">
   </head>
   <body>
-    <div class="game-container">
-      <canvas class="game-canvas" width="500" height="500"></canvas>
+    <div class="centerer">
+      <div class="game-screen" width="640" height="360">
+        <div class="game-container">
+          <canvas class="game-canvas" width="640" height="360"></canvas>
+        </div>
+        <div class="game-menu" width="640" height="360">
+          <p>Pause</p>
+          <button class="continue-button"></button>
+        </div>
+      </div>
+      <button class="game-button">ENTER</button>
     </div>
     <!-- Scripts -->
     <script src="/init.js"></script>

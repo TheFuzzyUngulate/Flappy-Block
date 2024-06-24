@@ -1,4 +1,38 @@
+// Javascript won't allow me to use RNG seeds, so here we go...
+// this is from the lovely answer: https://stackoverflow.com/a/47593316
+function sfc32(a, b, c, d) {
+  return function() {
+    a |= 0; b |= 0; c |= 0; d |= 0;
+    let t = (a + b | 0) + d | 0;
+    d = d + 1 | 0;
+    a = b ^ b >>> 9;
+    b = c + (c << 3) | 0;
+    c = (c << 21 | c >>> 11);
+    c = c + t | 0;
+    return (t >>> 0) / 4294967296;
+  }
+}
+
+const seedgen = () => (Math.random()*2**32)>>>0;
+const getRand = sfc32(seedgen(), seedgen(), seedgen(), seedgen());
+
 var keyList = {};
+
+document.getElementsByClassName('game-button')[0].addEventListener('mousedown', (ev) => {
+  keyList['ArrowUp'] = true;
+}, true);
+
+document.getElementsByClassName('game-button')[0].addEventListener('mouseup', (ev) => {
+  keyList['ArrowUp'] = false;
+}, true);
+
+document.getElementsByClassName('game-button')[0].addEventListener('touchstart', (ev) => {
+  keyList['ArrowUp'] = true;
+}, true);
+
+document.getElementsByClassName('game-button')[0].addEventListener('touchend', (ev) => {
+  keyList['ArrowUp'] = false;
+}, true);
 
 document.addEventListener('keydown', (ev) => {
   keyList[ev.key] = true;
@@ -22,14 +56,14 @@ var gameState = {
 
 var gameBoard = {
   canvas: document.getElementsByClassName('game-canvas')[0],
-  get width() {
-    return this.canvas.width;
-  },
-  get height() {
-    return this.canvas.height;
-  },
-  get ctx() {
-    return this.canvas.getContext('2d');
+  width: 0,
+  height: 0,
+  ctx: null,
+  init: function() {
+    this.canvas = document.getElementsByClassName('game-canvas')[0];
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+    this.ctx = this.canvas.getContext('2d');
   },
   isCollide: function() {
     var i = 0;
@@ -37,6 +71,8 @@ var gameBoard = {
     var playerRight = player.x + player.width;
     var playerTop = player.y;
     var playerBottom = player.y + player.height;
+
+    if (playerBottom >= gameBoard.height) return true;
 
     for (i = 0; i < gameObstacles.obstacles.length; ++i) {
       var obstacle = gameObstacles.obstacles.at(i);
@@ -81,38 +117,40 @@ var gameBoard = {
 
 var gameObstacles = {
   obstacles: [],
-  speed: 1,
-  baseWidth: 30,
-  minGap: 80,
-  maxGap: 150,
-  minHeight: 30,
-  maxHeight: 70,
+  speed: 0,
+  baseWidth: 0,
+  minGap: 0,
+  maxGap: 0,
+  minHeight: 0,
+  maxHeight: 0,
   prevGenerateTime: 0,
-  generateWaitMilliseconds: 5000,
+  generateWaitMilliseconds: 0,
+  color: "",
   init: function() {
     this.obstacles.splice(0, this.obstacles.length);
     this.speed = 1;
     this.baseWidth = 30;
-    this.minGap = 80;
-    this.maxGap = 150;
-    this.minHeight = 30;
-    this.maxHeight = 70;
+    this.minGap = Math.max(player.height * 2, gameBoard.height * 0.2);
+    this.maxGap = Math.max(player.height * 2, gameBoard.height * 0.4);
+    this.minHeight = gameBoard.height * 0.1;
+    this.maxHeight = gameBoard.height * 0.7;
     this.prevGenerateTime = 0;
-    this.gnerateWaitMilliseconds = 5000;
+    this.generateWaitMilliseconds = 5000;
+    this.color = "green";
   },
   generate: function() {
     elapsed = Date.now() - this.prevGenerateTime;
     if (elapsed > this.generateWaitMilliseconds) {
-      var gap = Math.floor(Math.random() * (this.maxGap - this.minGap + 1) + this.minGap);
-      var height = Math.floor(Math.random() * (this.maxHeight - this.minHeight + 1) + this.minHeight);
-      var width = this.baseWidth + 2 * Math.random();
+      var gap = Math.floor(getRand() * (this.maxGap - this.minGap + 1) + this.minGap);
+      var height = Math.floor(getRand() * (this.maxHeight - this.minHeight + 1) + this.minHeight);
+      var width = this.baseWidth + 2 * getRand();
 
       this.obstacles.push({
         width: width,
         height: height,
         x: gameBoard.width,
         y: 0,
-        color: "green"
+        color: this.color
       });
   
       this.obstacles.push({
@@ -120,7 +158,7 @@ var gameObstacles = {
         height: gameBoard.width - height - gap,
         x: gameBoard.width,
         y: height + gap,
-        color: "green"
+        color: this.color,
       });
 
       this.prevGenerateTime = Date.now();
@@ -144,18 +182,18 @@ var gameObstacles = {
 };
 
 var player = {
-  width: 30,
-  height: 30,
-  x: gameBoard.width / 100,
-  y: gameBoard.height / 2,
+  width: 0,
+  height: 0,
+  x: 0,
+  y: 0,
   gravity: 0,
-  gravitySpeed: 0.5,
-  gravityMin: -5,
-  gravityMax: 3,
-  speedX: 3,
+  gravitySpeed: 0,
+  gravityMin: 0,
+  gravityMax: 0,
+  speedX: 0,
   timeOfLastHop: 0,
-  hopCooldownMilliseconds: 3,
-  color: "red",
+  hopCooldownMilliseconds: 0,
+  color: "",
   init: function() {
     this.width = 30;
     this.height = 30;
@@ -205,15 +243,26 @@ var player = {
 
 async function retryMenu() {
   let myPromise = new Promise((resolve) => {
-    console.log("you suck.. continue? (y/n)");
+    var gameMenu = document.getElementsByClassName('game-menu')[0];
+    var gameMenuMessage = gameMenu.getElementsByTagName('p')[0];
+    var gameMenuButton = gameMenu.getElementsByTagName('button')[0];
+
+    gameMenu.style.zIndex = '1';
+    gameMenuMessage.innerHTML = "Try again?";
+    gameMenuButton.innerHTML = "Retry";
+    
+    // set event for button
+    gameMenuButton.addEventListener("click", () => {
+      gameMenu.style.zIndex = '-1';
+      resolve(false);
+    });
+
+    // set event for key
     signalCheck();
     function signalCheck() {
-      if (keyList['y'] == true) {
-        console.log("right on, then!");
+      if (keyList['Enter'] == true) {
+        gameMenu.style.zIndex = '-1';
         resolve(false);
-      } else if (keyList['n'] == true) {
-        console.log("coward...");
-        resolve(true);
       } else {
         setTimeout(signalCheck, 0);
       }
@@ -230,7 +279,7 @@ async function pauseMenu() {
 
 }
 
-(function animate() {
+function animate() {
   function runGame() {
     player.update();
     gameObstacles.update();
@@ -252,9 +301,18 @@ async function pauseMenu() {
           gameState.state = GameStates.RUNNING_GAME;
           player.init();
           gameObstacles.init();
+          seedgen();
           runGame();
         }
       );
       break;
   }
-})();
+}
+
+window.addEventListener('load', () => {
+  gameBoard.init();
+  player.init();
+  gameObstacles.init();
+  seedgen();
+  animate();
+});
