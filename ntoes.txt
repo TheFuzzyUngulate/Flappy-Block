@@ -1,0 +1,55 @@
+
+
+var playerQuad = {
+  width: 30,
+  height: 30,
+  x: 0,
+  y: 0,
+  speedX: 1,
+  speedY: 3,
+  color: "red",
+  update: function() {
+    var isUp = keyList['ArrowUp'] == true || keyList['w'] == true;
+    var isDown = keyList['ArrowDown'] == true || keyList['s'] == true;
+    var isLeft = keyList['ArrowLeft'] == true || keyList['a'] == true;
+    var isRight = keyList['ArrowRight'] == true || keyList['d'] == true;
+
+    if (isUp) {
+      if (isLeft) {
+        this.x -= this.speedX * Math.sin(Math.PI / 4);
+        this.y -= this.speedY * Math.sin(Math.PI / 4);
+      } else if (isRight) {
+        this.x += this.speedX * Math.sin(Math.PI / 4);
+        this.y -= this.speedY * Math.sin(Math.PI / 4);
+      } else {
+        this.y -= this.speedY;
+      }
+    } else if (isDown) {
+      if (isLeft) {
+        this.x -= this.speedX * Math.sin(Math.PI / 4);
+        this.y += this.speedY * Math.sin(Math.PI / 4);
+      } else if (isRight) {
+        this.x += this.speedX * Math.sin(Math.PI / 4);
+        this.y += this.speedY * Math.sin(Math.PI / 4);
+      } else {
+        this.y = this.y + this.speedY;
+      }
+    } else if (isLeft) {
+      this.x -= this.speedX;
+    } else if (isRight) {
+      this.x += this.speedX;
+    }
+
+    if (this.y < 0) {
+      this.y = 0;
+    } else if (this.y > gameBoard.height - this.height) {
+      this.y = gameBoard.height - this.height;
+    }
+
+    if (this.x < 0) {
+      this.x = 0;
+    } else if (this.x > gameBoard.width - this.width) {
+      this.x = gameBoard.width - this.width;
+    }
+  },
+};
