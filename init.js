@@ -16,6 +16,10 @@ function sfc32(a, b, c, d) {
 const seedgen = () => (Math.random()*2**32)>>>0;
 const getRand = sfc32(seedgen(), seedgen(), seedgen(), seedgen());
 
+function parseCSV(csvString) {
+  
+}
+
 var keyList = {};
 
 document.getElementsByClassName('game-button')[0].addEventListener('mousedown', (ev) => {
@@ -51,7 +55,35 @@ const GameStates = Object.freeze({
 
 var gameState = {
   score: 0,
+  name: "Justin",
+  highScores: [],
   state: GameStates.RUNNING_GAME,
+  init: function() {
+    this.score = 0;
+    this.state = GameStates.RUNNING_GAME;
+    this.highScores = [];
+    fetch("/scores", {
+      method: 'GET',
+      body: stringScore,
+      headers: {
+        'Content-Type': 'text/plain',
+      }
+    }).then((value) => {
+      (() => {return value.text();})()
+      .then((valueText) => {
+        if (valueText.length > 0) {
+          valueText.split('\n').forEach((str, _) => {
+            var numValue = Number(str);
+            if (numValue == NaN) {
+              this.highScores.push(0);
+            } else {
+              this.highScores.push(numValue);
+            }
+          });
+        }
+      })
+    });
+  }
 };
 
 var gameBoard = {
@@ -217,7 +249,6 @@ var player = {
     if (isRight) this.x += this.speedX;
     if (isUp) {
       elapsed = Date.now() - this.timeOfLastHop;
-      console.log(elapsed);
       if (elapsed > this.hopCooldownMilliseconds) {
         this.gravity = this.gravityMax;
         this.timeOfLastHop = Date.now();
@@ -243,7 +274,27 @@ var player = {
 
 async function retryMenu() {
   let myPromise = new Promise((resolve) => {
+    // game menu
     var gameMenu = document.getElementsByClassName('game-menu')[0];
+    var gameMenuHighScores = document.createElement('table');
+    
+    // store new high scores
+    var spotIsFound = false;
+    for (i = 0; i < gameState.highScores.length; ++i) {
+      var score = gameState.highScores[i];
+      if (gameState.score > score && !spotIsFound) {
+        gameState.highScores[i] = gameState.score;
+        spotIsFound = true;
+      }
+      var row = gameMenuHighScores.insertRow();
+      var nameCell = row.insertCell();
+      var highScoreCell = row.insertCell();
+      var dateCell = row.insertCell();
+
+      nameCell.innerHTML = gameState.name;
+      highScoreCell.innerHTML = gameState.highScores[i];
+    }
+
     var gameMenuMessage = gameMenu.getElementsByTagName('p')[0];
     var gameMenuButton = gameMenu.getElementsByTagName('button')[0];
 
@@ -294,7 +345,6 @@ function animate() {
       retryMenu().then(
         function(value) {
           if (value == true) {
-            console.log("yep, we gone now..");
             gameBoard.clear();
             return;
           }
